@@ -86,36 +86,102 @@ function flyFor(cat) {
     [`More from ${name}`, [[`${name} Support`, '#/support'], ['AppleCare', '#/info/applecare'], [cat === 'iphone' ? 'iOS 27' : cat === 'mac' ? 'macOS 27' : cat === 'ipad' ? 'iPadOS 27' : cat === 'watch' ? 'watchOS 27' : 'Apple Intelligence', '#/info/apple-intelligence'], ['Apps by Apple', '#/entertainment'], ['iCloud+', '#/entertainment']]]
   ];
 }
-function flyHTML(cols) {
-  return `<div class="cols">${cols.map(([h, links]) => `<div class="col"><h4>${h}</h4>${links.map(([t, u]) => `<a href="${u}">${t}</a>`).join('')}</div>`).join('')}</div>`;
+function flyHTML(cols, cat) {
+  let i = 0;
+  const st = () => `style="--i:${i++}"`;
+  const items = cat && byCat(cat);
+  const list = items && items.length ? `<div class="col fly-products"><h4>${cols[0][0]}</h4>
+    ${items.map(p => `<a class="fly-prod" href="#/p/${p.id}" ${st()}><span class="fp-img">${visual(p, 0)}</span><span><span class="fp-name">${p.name}</span>${p.isNew ? '<span class="fp-new">New</span>' : ''}</span></a>`).join('')}
+    <a class="fly-all" href="#/${cat}" ${st()}>Explore All ${CATEGORIES[cat].title} &rsaquo;</a>${cat !== 'accessories' && cat !== 'vision' ? `<a class="fly-all" href="#/compare/${cat}" ${st()}>Compare ${CATEGORIES[cat].title} &rsaquo;</a>` : ''}</div>` : '';
+  const rest = list ? cols.slice(1) : cols;
+  return `<div class="cols">${list}${rest.map(([h, links], ci) => `<div class="col ${!list && ci === 0 ? 'big' : ''}"><h4 ${st()}>${h}</h4>${links.map(([t, u]) => `<a href="${u}" ${st()}>${t}</a>`).join('')}</div>`).join('')}</div>`;
+}
+
+function mobileMenuHTML() {
+  return `<div class="m-panels"><div class="m-panel m-root">${NAV.map((c, i) => `<button class="m-cat" data-mcat="${c}" style="--i:${i}">${CATEGORIES[c].name}<span>&rsaquo;</span></button>`).join('')}</div><div class="m-panel m-sub" id="msub"></div></div>`;
+}
+function mobileSubHTML(cat) {
+  const items = byCat(cat);
+  const cols = flyFor(cat);
+  let i = 0;
+  return `<button class="m-back" data-mback>&lsaquo; Back</button><h4>${cols[0][0]}</h4>
+    ${items.length ? items.map(p => `<a class="fly-prod" href="#/p/${p.id}" style="--i:${i++}"><span class="fp-img">${visual(p, 0)}</span><span><span class="fp-name">${p.name}</span>${p.isNew ? '<span class="fp-new">New</span>' : ''}</span></a>`).join('') + `<a class="fly-all" href="#/${cat}" style="--i:${i++}">Explore All ${CATEGORIES[cat].title} &rsaquo;</a>`
+      : cols[0][1].map(([t, u]) => `<a class="m-link" href="${u}" style="--i:${i++}">${t}</a>`).join('')}
+    ${cols.slice(1).map(([h, links]) => `<h4 style="margin-top:26px">${h}</h4>${links.map(([t, u]) => `<a class="m-small" href="${u}">${t}</a>`).join('')}`).join('')}`;
 }
 
 function renderNav() {
   const gn = $('#gn');
   gn.innerHTML = `<ul class="gn-list">
     <li><a class="gn-icon" href="#/" aria-label="Apple">${appleLogo()}</a></li>
-    ${NAV.map(c => `<li class="gn-item desk"><a class="gn-link" data-fly="${c}" href="#/${c}">${CATEGORIES[c].name}</a></li>`).join('')}
+    ${NAV.map(c => `<li class="gn-item desk"><a class="gn-link" data-fly="${c}" href="#/${c}" aria-expanded="false">${CATEGORIES[c].name}</a></li>`).join('')}
     <li><a class="gn-icon" href="#" data-search aria-label="Search apple.com">${ICON_SEARCH}</a></li>
     <li><a class="gn-icon gn-bag" href="#/bag" data-bag aria-label="Shopping Bag">${ICON_BAG}</a></li>
     <li class="gn-mobile"><button class="gn-icon" data-menu aria-label="Menu">${ICON_MENU}</button></li>
   </ul>
-  <div class="gn-flyout" id="fly"></div>
+  <div class="gn-flyout" id="fly"><div class="fly-inner" id="flyin"></div></div>
   <div class="bag-pop" id="bagpop"></div>`;
-  const fly = $('#fly'), scrim = $('#scrim');
-  let timer;
-  const open = (html, after) => { clearTimeout(timer); fly.innerHTML = html; fly.classList.add('open'); scrim.classList.add('open'); after && after(); };
-  const close = () => { fly.classList.remove('open'); scrim.classList.remove('open'); $('#bagpop').classList.remove('open'); };
+  const fly = $('#fly'), inner = $('#flyin'), scrim = $('#scrim');
+  let timer, closeTimer;
+  const fit = () => { if (fly.classList.contains('open')) fly.style.height = (fly.classList.contains('mobile') ? window.innerHeight - gn.getBoundingClientRect().bottom : inner.offsetHeight) + 'px'; };
+  // Expand smoothly from the current height to the new content's height.
+  const open = (html, after, key = '') => {
+    clearTimeout(timer); clearTimeout(closeTimer);
+    $('#bagpop').classList.remove('open');
+    if (fly.dataset.key !== key || !fly.classList.contains('open')) {
+      inner.innerHTML = html;
+      inner.classList.remove('anim'); void inner.offsetWidth; inner.classList.add('anim');
+      hydrateVisuals(inner);
+    }
+    fly.dataset.key = key;
+    fly.classList.toggle('mobile', key === 'menu');
+    fly.classList.add('open'); scrim.classList.add('open');
+    $$('[data-fly]', gn).forEach(a => a.setAttribute('aria-expanded', a.dataset.fly === key));
+    requestAnimationFrame(fit);
+    after && after();
+  };
+  const close = () => {
+    clearTimeout(timer);
+    delete fly.dataset.sticky;
+    fly.style.height = '0px';
+    fly.classList.remove('open'); scrim.classList.remove('open'); $('#bagpop').classList.remove('open');
+    $$('[data-fly]', gn).forEach(a => a.setAttribute('aria-expanded', 'false'));
+    document.body.classList.remove('no-scroll');
+    closeTimer = setTimeout(() => { if (!fly.classList.contains('open')) { inner.innerHTML = ''; fly.dataset.key = ''; } }, 320);
+  };
   window.closeNav = close;
+  window.addEventListener('resize', fit);
   $$('[data-fly]', gn).forEach(a => {
-    a.addEventListener('mouseenter', () => { timer = setTimeout(() => open(flyHTML(flyFor(a.dataset.fly))), 120); });
+    const cat = a.dataset.fly;
+    a.addEventListener('mouseenter', () => { if (fly.dataset.sticky && fly.dataset.key === 'search') return; timer = setTimeout(() => open(flyHTML(flyFor(cat), cat), null, cat), fly.classList.contains('open') ? 60 : 180); });
     a.addEventListener('mouseleave', () => clearTimeout(timer));
+    // Clicking a category opens (or closes) its product list instead of jumping straight to the page.
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      if (fly.classList.contains('open') && fly.dataset.key === cat && fly.dataset.sticky) return close();
+      fly.dataset.sticky = 1;
+      open(flyHTML(flyFor(cat), cat), null, cat);
+    });
   });
   gn.addEventListener('mouseleave', () => { if (!fly.dataset.sticky) close(); });
-  fly.addEventListener('click', e => { if (e.target.closest('a')) { delete fly.dataset.sticky; close(); } });
-  scrim.addEventListener('click', () => { delete fly.dataset.sticky; close(); });
+  fly.addEventListener('click', e => {
+    const mc = e.target.closest('[data-mcat]');
+    if (mc) {
+      $('#msub').innerHTML = mobileSubHTML(mc.dataset.mcat);
+      hydrateVisuals($('#msub'));
+      $('#msub').classList.remove('anim'); void $('#msub').offsetWidth; $('#msub').classList.add('anim');
+      $('.m-panels', fly).classList.add('sub');
+      $('#msub').scrollTop = 0;
+      return;
+    }
+    if (e.target.closest('[data-mback]')) return $('.m-panels', fly).classList.remove('sub');
+    if (e.target.closest('a')) close();
+  });
+  scrim.addEventListener('click', close);
 
   $('[data-search]', gn).addEventListener('click', e => {
     e.preventDefault();
+    if (fly.classList.contains('open') && fly.dataset.key === 'search') return close();
     fly.dataset.sticky = 1;
     open(`<div class="gn-search">${ICON_SEARCH.replace('viewBox="0 0 15 44"', 'viewBox="0 13 15 18"')}<input id="q" placeholder="Search apple.com" autocomplete="off"></div>
       <div class="wrap"><div class="cols" style="padding:0"><div class="col" id="sres" style="width:100%"></div></div></div>`, () => {
@@ -127,11 +193,12 @@ function renderNav() {
         const hits = searchProducts(v).slice(0, 7);
         res.innerHTML = `<h4>Suggested Links</h4><div class="search-results">${hits.length ? hits.map(p => `<a href="#/p/${p.id}"><span class="thumb">${visual(p, 0)}</span>${esc(p.name)}</a>`).join('') : '<p class="small">No suggestions.</p>'}</div><a href="#/search/${encodeURIComponent(v)}">See all results for "${esc(v)}"</a>`;
         hydrateVisuals(res);
+        fit();
       };
       q.addEventListener('input', show);
-      q.addEventListener('keydown', e => { if (e.key === 'Enter' && q.value.trim()) { delete fly.dataset.sticky; close(); go('/search/' + encodeURIComponent(q.value.trim())); } if (e.key === 'Escape') { delete fly.dataset.sticky; close(); } });
+      q.addEventListener('keydown', e => { if (e.key === 'Enter' && q.value.trim()) { close(); go('/search/' + encodeURIComponent(q.value.trim())); } if (e.key === 'Escape') close(); });
       show();
-    });
+    }, 'search');
   });
 
   const bagBtn = $('[data-bag]', gn);
@@ -157,9 +224,9 @@ function renderNav() {
   });
 
   $('[data-menu]', gn).addEventListener('click', () => {
-    if (fly.classList.contains('open')) { delete fly.dataset.sticky; return close(); }
+    if (fly.classList.contains('open')) return close();
     fly.dataset.sticky = 1;
-    open(`<div class="cols"><div class="col">${NAV.map(c => `<a href="#/${c}">${CATEGORIES[c].name}</a>`).join('')}</div></div>`);
+    open(mobileMenuHTML(), () => document.body.classList.add('no-scroll'), 'menu');
   });
   updateBadge();
 }
@@ -226,6 +293,7 @@ function navigate() {
   }
   if (!sessionStorage.getItem('keepScroll')) window.scrollTo(0, 0);
   sessionStorage.removeItem('keepScroll');
+  main.classList.remove('page-in'); void main.offsetWidth; main.classList.add('page-in');
   hydrateVisuals(main);
   observeReveal(main);
   main.focus({ preventScroll: true });
