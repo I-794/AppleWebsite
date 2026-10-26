@@ -1,6 +1,7 @@
 /* Bag, checkout, orders, and account. Everything is stored locally in the browser. */
 
 const STATES = Object.keys(TAX_RATES);
+const TEST_CARDS = ['4242424242424242', '4000056655665556', '5555555555554444', '378282246310005', '6011111111111117'];
 const luhn = num => { let s = 0, alt = false; for (let i = num.length - 1; i >= 0; i--) { let d = +num[i]; if (alt) { d *= 2; if (d > 9) d -= 9; } s += d; alt = !alt; } return num.length >= 13 && s % 10 === 0; };
 const cardBrand = n => /^3[47]/.test(n) ? 'AMEX' : /^4/.test(n) ? 'VISA' : /^(5[1-5]|2[2-7])/.test(n) ? 'MASTERCARD' : /^6(011|5)/.test(n) ? 'DISCOVER' : '';
 const SHIP_OPTS = [
@@ -222,9 +223,9 @@ function coPayment() {
   const draw = () => {
     main().innerHTML = coShell('payment', `<h1 class="h-2">How do you want to pay?</h1>
       ${[['card', 'Credit or Debit Card', 'Visa, Mastercard, Amex, Discover'], ['applepay', 'Apple Pay', 'Pay with Face ID or Touch ID'], ['gift', 'Apple Gift Card', 'Redeem a gift card code']].map(([id, t, s]) => `<label class="radio-card ${d.payType === id ? 'on' : ''}"><input type="radio" name="pt" value="${id}" ${d.payType === id ? 'checked' : ''}><div class="grow"><p class="rt">${t}</p><p class="small">${s}</p></div></label>`).join('')}
-      <div class="notice">Demo checkout: card details are only checked for format in your browser. Nothing is charged or sent anywhere. Try the test number 4242 4242 4242 4242.</div>
+      <div class="notice">Demo checkout: card details are only checked for format in your browser. Only test cards work (4242 4242 4242 4242, 5555 5555 5555 4444, 3782 822463 10005). Never enter a real card.</div>
       ${d.payType === 'card' ? `<p class="h-4">Enter your card information.</p>
-        <div class="field"><input id="cn" inputmode="numeric" autocomplete="off" placeholder=" " maxlength="23"><label>Card Number</label><span class="card-brand" id="cb"></span><p class="msg">Enter a valid card number.</p></div>
+        <div class="field"><input id="cn" inputmode="numeric" autocomplete="off" placeholder=" " maxlength="23"><label>Card Number</label><span class="card-brand" id="cb"></span><p class="msg">Demo only: use a test card such as 4242 4242 4242 4242.</p></div>
         <div class="row2"><div class="field"><input id="cx" inputmode="numeric" placeholder=" " maxlength="5"><label>Expiration MM/YY</label><p class="msg">Enter a valid future date.</p></div>
         <div class="field"><input id="cv" inputmode="numeric" placeholder=" " maxlength="4"><label>Security Code</label><p class="msg">Enter a valid security code.</p></div></div>
         <div class="field"><input id="cname" placeholder=" " autocomplete="off"><label>Name on Card</label><p class="msg">Required.</p></div>` : ''}
@@ -253,7 +254,7 @@ function coPayment() {
     const bad = (el, cond) => { el.parentElement.classList.toggle('err', !cond); ok = ok && cond; };
     if (d.payType === 'card') {
       const num = $('#cn').value.replace(/\D/g, ''), brand = cardBrand(num);
-      bad($('#cn'), luhn(num) && !!brand);
+      bad($('#cn'), luhn(num) && !!brand && TEST_CARDS.includes(num));
       const [mm, yy] = $('#cx').value.split('/').map(Number);
       const exp = mm >= 1 && mm <= 12 && yy >= 0 && new Date(2000 + yy, mm, 1) > new Date();
       bad($('#cx'), !!exp);

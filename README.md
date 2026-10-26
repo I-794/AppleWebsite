@@ -20,6 +20,6 @@ then visit http://localhost:8000.
 - Checkout: guest or sign-in, delivery or store pickup, card validation (Luhn), gift card, simulated Apple Pay, state sales tax, order confirmation, order tracking and cancel
 - Account, order history, service subscriptions, Genius Bar booking, trade-in estimator
 
-Test card: `4242 4242 4242 4242`, any future date, any 3-digit code.
+Only test cards are accepted, e.g. `4242 4242 4242 4242`, any future date, any 3-digit code.
 
 Product photos are hotlinked from Apple's image CDN when available; otherwise the site draws its own vector renders of each product in every finish.

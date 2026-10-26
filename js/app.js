@@ -219,7 +219,7 @@ function navigate() {
       gn.classList.toggle('dark', !!out.dark);
       gn.style.display = out.chromeless ? 'none' : '';
       $('#gf').style.display = out.chromeless ? 'none' : '';
-      document.title = out.title ? `${out.title} - Apple` : 'Apple';
+      document.title = (out.title ? `${out.title} - ` : '') + 'Apple Store Recreation (Fan Project)';
       $('#bc-page') && ($('#bc-page').textContent = out.crumb || out.title || 'Home');
       break;
     }
