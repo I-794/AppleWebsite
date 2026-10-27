@@ -4,25 +4,79 @@ const main = () => $('#main');
 const pv = (id, ci = 0, cls = '') => visual(byId(id), ci, cls);
 
 /* ---------- Home ---------- */
+/* "rvg" = reveal group: the children rise in one after another when the block scrolls into view. */
+const onDark = cls => (/\bdark\b/.test(cls) ? 'on-dark' : '');
 function heroBlock({ id, cls = '', title, sub, ctas, ci = 0, eyebrow = '', note = '' }) {
-  return `<section class="hero ${cls}">
+  return `<section class="hero rvg ${cls}">
     ${eyebrow ? `<span class="badge-new">${eyebrow}</span>` : ''}
     <h2 class="h-hero">${title}</h2>
     <p class="sub" style="margin-top:6px">${sub}</p>
     <div class="ctas">${ctas}</div>
     ${note ? `<p class="small" style="margin-top:12px">${note}</p>` : ''}
-    <div class="stage">${pv(id, ci)}</div>
+    <div class="stage">${pv(id, ci, onDark(cls))}</div>
   </section>`;
 }
 function tileBlock({ id, cls = '', title, sub, ctas, ci = 0, eyebrow = '' }) {
-  return `<div class="tile ${cls}">
+  return `<div class="tile rvg ${cls}">
     ${eyebrow ? `<span class="badge-new">${eyebrow}</span>` : ''}
     <h2 class="h-2">${title}</h2>
     <p class="sub-sm">${sub}</p>
     <div class="ctas" style="margin-top:14px">${ctas}</div>
-    <div class="stage">${pv(id, ci)}</div>
+    <div class="stage">${pv(id, ci, onDark(cls))}</div>
   </div>`;
 }
+
+/* Swap the product visual inside `el` with a crossfade instead of a hard cut. */
+function swapVisual(el, html) {
+  $$('.fade-out', el).forEach(o => o.remove());
+  const old = el.firstElementChild;
+  el.insertAdjacentHTML('beforeend', html);
+  const nu = el.lastElementChild;
+  hydrateVisuals(el);
+  if (!old) return;
+  el.classList.add('xfade');
+  old.classList.add('fade-out'); nu.classList.add('fade-in');
+  setTimeout(() => { old.remove(); nu.classList.remove('fade-in'); if (!$('.fade-out', el)) el.classList.remove('xfade'); }, 460);
+}
+
+/* A "+" card grows from its spot on the page into a full sheet, then its text fades in. */
+function expandCard(card, d) {
+  const r = card.getBoundingClientRect();
+  const bg = document.createElement('div');
+  bg.className = 'xcard-bg';
+  bg.innerHTML = `<div class="xcard ${d.light ? 'light' : ''}" role="dialog" aria-modal="true" style="top:${r.top}px;left:${r.left}px;width:${r.width}px;height:${r.height}px;background:${d.bg}">
+    <button class="x" aria-label="Close">&#x2715;</button>
+    <div class="xcard-body">${d.eyebrow ? `<p class="eyebrow">${d.eyebrow}</p>` : ''}<h2 class="h-1">${d.title}</h2><p class="body">${d.body}</p>${d.link ? `<a class="btn" href="${d.link}">${d.linkText || 'Learn more'}</a>` : ''}</div>
+  </div>`;
+  document.body.appendChild(bg);
+  document.body.classList.add('no-scroll');
+  const x = bg.firstElementChild;
+  const place = () => {
+    const W = Math.min(980, innerWidth - 40), H = Math.min(innerHeight - 80, 640);
+    Object.assign(x.style, { top: (innerHeight - H) / 2 + 'px', left: (innerWidth - W) / 2 + 'px', width: W + 'px', height: H + 'px' });
+  };
+  requestAnimationFrame(() => requestAnimationFrame(() => { bg.classList.add('open'); x.classList.add('open'); place(); }));
+  const close = () => {
+    const r2 = card.getBoundingClientRect();
+    x.classList.remove('open'); bg.classList.remove('open');
+    Object.assign(x.style, { top: r2.top + 'px', left: r2.left + 'px', width: r2.width + 'px', height: r2.height + 'px' });
+    document.body.classList.remove('no-scroll');
+    window.removeEventListener('resize', place);
+    setTimeout(() => bg.remove(), 560);
+  };
+  bg._close = close;
+  window.addEventListener('resize', place);
+  bg.addEventListener('click', e => {
+    if (e.target.closest('a')) { bg.remove(); document.body.classList.remove('no-scroll'); return; }
+    if (e.target === bg || e.target.closest('.x')) close();
+  });
+}
+document.addEventListener('click', e => {
+  const c = e.target.closest('[data-expand]');
+  if (!c) return;
+  e.preventDefault();
+  expandCard(c, JSON.parse(decodeURIComponent(c.dataset.expand)));
+});
 const learnBuy = (id, buy = 'Buy') => `<a class="btn" href="#/p/${id}">Learn more</a><a class="btn ghost" href="#/buy/${id}">${buy}</a>`;
 
 function posterArt(s, i) {
@@ -38,7 +92,7 @@ route(/^\/$/, () => {
   <div class="ribbon">Get up to $650 in credit toward iPhone Duo or iPhone 18 Pro when you trade in iPhone 13 or higher.* <a class="more" href="#/trade-in">Shop iPhone</a></div>
   ${heroBlock({ id: 'iphone-duo', cls: 'white', title: 'iPhone Duo', sub: 'Open up to new possibilities.', ctas: learnBuy('iphone-duo'), eyebrow: 'New' })}
   ${heroBlock({ id: 'iphone-18-pro', cls: 'dark', title: 'iPhone 18 Pro', sub: 'The ultimate pro.', ctas: learnBuy('iphone-18-pro'), ci: 3 })}
-  ${heroBlock({ id: 'homeview', title: 'HomeView', sub: 'Your home. In view.', ctas: learnBuy('homeview', 'Pre-order'), note: 'Available November 13', eyebrow: 'New' })}
+  ${heroBlock({ id: 'homeview', cls: 'white', title: 'HomeView', sub: 'Your home. In view.', ctas: learnBuy('homeview', 'Pre-order'), note: 'Available November 13', eyebrow: 'New' })}
   <section class="grid-tiles">
     ${tileBlock({ id: 'homepod-mini', cls: 'white', title: 'HomePod mini', sub: 'Big sound. Little glow.', ctas: learnBuy('homepod-mini', 'Pre-order'), ci: 2, eyebrow: 'New · Available October 30' })}
     ${tileBlock({ id: 'apple-tv-4k', cls: 'dark', title: `<span class="logo-word">${appleLogo()}TV 4K</span>`, sub: 'Now with Siri AI and a FaceTime camera.', ctas: learnBuy('apple-tv-4k', 'Pre-order'), eyebrow: 'New' })}
@@ -49,17 +103,17 @@ route(/^\/$/, () => {
     ${tileBlock({ id: 'macbook-neo', title: 'MacBook Neo', sub: 'Hello, Neo. From $699.', ctas: learnBuy('macbook-neo'), ci: 0 })}
     ${tileBlock({ id: 'macbook-air', cls: 'white', title: 'MacBook Air', sub: 'Sky blue. Sky high. Now with M5.', ctas: learnBuy('macbook-air') })}
     ${tileBlock({ id: 'ipad-air', cls: 'white', title: 'iPad Air', sub: 'Now supercharged by M4.', ctas: learnBuy('ipad-air'), ci: 1 })}
-    <div class="tile" style="background:linear-gradient(160deg,#f5f5f7,#e8f0ff)">
+    <div class="tile rvg" style="background:linear-gradient(160deg,#f5f5f7,#e8f0ff)">
       <h2 class="h-2">Apple Trade In</h2>
       <p class="sub-sm">Get up to $650 in credit when you trade in iPhone 13 or higher.*</p>
       <div class="ctas" style="margin-top:14px"><a class="btn" href="#/trade-in">Get your estimate</a></div>
       <div class="stage" style="gap:0">${pv('iphone-17', 2)}${pv('iphone-18-pro', 2)}</div>
     </div>
-    <div class="tile dark" style="background:radial-gradient(circle at 50% 80%,#3a1c71,#000 70%)">
+    <div class="tile dark rvg" style="background:radial-gradient(circle at 50% 80%,#3a1c71,#000 70%)">
       <h2 class="h-2">Apple Intelligence</h2>
       <p class="sub-sm">Meet the all-new Siri. Built into iOS 27.</p>
       <div class="ctas" style="margin-top:14px"><a class="btn" href="#/info/apple-intelligence">Learn more</a></div>
-      <div class="stage"><svg viewBox="0 0 300 300" style="width:260px"><defs><linearGradient id="siri" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a3c"/><stop offset=".35" stop-color="#ff3ea5"/><stop offset=".7" stop-color="#7a5cff"/><stop offset="1" stop-color="#22c1ff"/></linearGradient></defs><circle cx="150" cy="150" r="110" fill="none" stroke="url(#siri)" stroke-width="16"/><circle cx="150" cy="150" r="72" fill="url(#siri)" opacity=".35"/></svg></div>
+      <div class="stage"><svg viewBox="0 0 300 300" style="width:260px"><defs><linearGradient id="siri" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff9a3c"/><stop offset=".35" stop-color="#ff3ea5"/><stop offset=".7" stop-color="#7a5cff"/><stop offset="1" stop-color="#22c1ff"/></linearGradient></defs><circle class="siri-ring" cx="150" cy="150" r="110" fill="none" stroke="url(#siri)" stroke-width="16"/><circle class="siri-glow" cx="150" cy="150" r="72" fill="url(#siri)" opacity=".35"/></svg></div>
     </div>
     ${tileBlock({ id: 'vision-pro', cls: 'dark', title: 'Apple Vision Pro', sub: 'Now with M5. You\'ve never seen everything like this.', ctas: learnBuy('vision-pro') })}
   </section>
@@ -83,17 +137,65 @@ route(/^\/$/, () => {
 });
 
 /* ---------- Category pages ---------- */
+/* [eyebrow, title, background, accent, body text shown when the card expands] */
 const GET_TO_KNOW = {
-  iphone: [['Apple Intelligence', 'Meet the all-new Siri.', '#1a1033', '#ff6ad5'], ['Cutting-Edge Cameras', 'Picture your best photos and videos.', '#0b0b0d', '#ffb340'], ['Chip and Battery Life', 'Fast that lasts.', '#101a2e', '#4cc2ff'], ['Innovation', 'Beautiful and durable, by design.', '#2b2b2e', '#d7d7db'], ['Environment', 'Recycled. Reused. Repeat.', '#0e2a1c', '#7ee08b'], ['Privacy', 'Your data. Just where you want it.', '#0d1b3d', '#6da8ff']],
-  mac: [['Performance', 'Apple silicon. Built for Apple Intelligence.', '#120d2a', '#a77bff'], ['Mac + iPhone', 'Mirror your iPhone right on your Mac.', '#0b1530', '#4cc2ff'], ['Compatibility', 'Your favorite apps run beautifully.', '#2a1410', '#ff8c5a'], ['macOS 27', 'Smarter, more personal.', '#0b2a2a', '#59e3d1'], ['Privacy', 'Privacy is built in.', '#0d1b3d', '#6da8ff']],
-  ipad: [['Productivity', 'Work anywhere, any way.', '#141414', '#ffb340'], ['Creativity', 'Draw, design, and edit with Apple Pencil.', '#2a0f2c', '#ff6ad5'], ['Learning', 'A world of learning in your hands.', '#0b2a1a', '#7ee08b'], ['iPadOS 27', 'Powerful new windowing.', '#0b1530', '#4cc2ff']],
-  watch: [['Health', 'Hypertension notifications and Sleep Score.', '#2a0d12', '#ff5a6a'], ['Fitness', 'Workout Buddy, powered by Apple Intelligence.', '#0f2a0b', '#a5ff4c'], ['Safety', 'Crash and Fall Detection.', '#2a1a0b', '#ffb340'], ['Connectivity', '5G and satellite on Ultra 4.', '#0b1530', '#4cc2ff']],
-  airpods: [['Live Translation', 'Understand more languages, hands-free.', '#0b1530', '#4cc2ff'], ['Hearing Health', 'Hearing Test and Hearing Aid features.', '#0f2a1c', '#7ee08b'], ['Spatial Audio', 'Sound all around you.', '#1a1033', '#c38bff']],
-  'tv-home': [['Siri AI at home', 'Ask about anything happening at home.', '#1a1033', '#ff6ad5'], ['Home Collection', 'New smart home accessories, starting in December.', '#2a2010', '#ffcf5a'], ['Apple TV app', 'Every show and movie, in one place.', '#0b0b0d', '#ffffff']],
-  vision: [['Entertainment', 'Your own private theater.', '#0b0b0d', '#4cc2ff'], ['Productivity', 'An infinite canvas for your apps.', '#141414', '#d7d7db'], ['Spatial Photos', 'Relive your memories.', '#2a1410', '#ff8c5a']],
-  accessories: [['MagSafe', 'Snap on and charge fast.', '#141414', '#ff8c5a'], ['Engraving', 'Make it personal. Free.', '#0b1530', '#4cc2ff']]
+  iphone: [
+    ['Apple Intelligence', 'Meet the all-new Siri.', '#1a1033', '#ff6ad5', 'Siri understands what is on your screen and takes action across your apps, with personal context that stays private thanks to on-device processing and Private Cloud Compute.'],
+    ['Cutting-Edge Cameras', 'Picture your best photos and videos.', '#0b0b0d', '#ffb340', '48MP Fusion cameras capture incredible detail in any light, and Camera Control gets you from pocket to photo in a flash.'],
+    ['Chip and Battery Life', 'Fast that lasts.', '#101a2e', '#4cc2ff', 'A20-class chips built on 2-nanometer technology deliver blazing performance and all-day battery life, so iPhone keeps up with everything you do.'],
+    ['Innovation', 'Beautiful and durable, by design.', '#2b2b2e', '#d7d7db', 'Grade 5 titanium and Ceramic Shield 2 make iPhone tougher than ever, in a design that feels as good as it looks.'],
+    ['Environment', 'Recycled. Reused. Repeat.', '#0e2a1c', '#7ee08b', 'iPhone is made with recycled aluminum, cobalt, and rare earth elements as part of Apple 2030, our plan to be carbon neutral across our entire footprint.'],
+    ['Privacy', 'Your data. Just where you want it.', '#0d1b3d', '#6da8ff', 'From Face ID to Mail Privacy Protection, iPhone is designed to keep your personal data on your device and out of anyone else\'s hands.']
+  ],
+  mac: [
+    ['Performance', 'Apple silicon. Built for Apple Intelligence.', '#120d2a', '#a77bff', 'M5 brings a next-generation GPU with a Neural Accelerator in every core, so Apple Intelligence and pro apps run faster than ever on Mac.'],
+    ['Mac + iPhone', 'Mirror your iPhone right on your Mac.', '#0b1530', '#4cc2ff', 'iPhone Mirroring lets you see and control your iPhone right from your Mac, and Continuity makes handing off work between devices feel like magic.'],
+    ['Compatibility', 'Your favorite apps run beautifully.', '#2a1410', '#ff8c5a', 'Microsoft 365, Adobe Creative Cloud, and thousands of other apps run natively on Apple silicon, right alongside the apps that come built in.'],
+    ['macOS 27', 'Smarter, more personal.', '#0b2a2a', '#59e3d1', 'A smarter Spotlight, Live Translation, and a new Siri that works across your apps make macOS 27 the most personal Mac experience yet.'],
+    ['Privacy', 'Privacy is built in.', '#0d1b3d', '#6da8ff', 'Every Mac has hardware-level security built in, from Touch ID to secure boot, and apps must ask before they can access your data.']
+  ],
+  ipad: [
+    ['Productivity', 'Work anywhere, any way.', '#141414', '#ffb340', 'With Stage Manager, Split View, and Magic Keyboard, iPad is a laptop when you need one and a tablet when you don\'t.'],
+    ['Creativity', 'Draw, design, and edit with Apple Pencil.', '#2a0f2c', '#ff6ad5', 'Apple Pencil Pro responds to squeeze, roll, and hover, so sketching, painting, and markup feel completely natural.'],
+    ['Learning', 'A world of learning in your hands.', '#0b2a1a', '#7ee08b', 'Interactive textbooks, Freeform, and built-in accessibility features make iPad the perfect companion for every kind of learner.'],
+    ['iPadOS 27', 'Powerful new windowing.', '#0b1530', '#4cc2ff', 'Resizable windows, a menu bar, and new multitasking gestures make iPadOS 27 feel more powerful than ever.']
+  ],
+  watch: [
+    ['Health', 'Hypertension notifications and Sleep Score.', '#2a0d12', '#ff5a6a', 'Hypertension notifications, Sleep Score, and Vitals keep you informed about your body around the clock.'],
+    ['Fitness', 'Workout Buddy, powered by Apple Intelligence.', '#0f2a0b', '#a5ff4c', 'Workout Buddy uses Apple Intelligence to give you real-time encouragement based on your own fitness history.'],
+    ['Safety', 'Crash and Fall Detection.', '#2a1a0b', '#ffb340', 'Crash Detection, Fall Detection, and Emergency SOS can call for help even when you can\'t reach your phone.'],
+    ['Connectivity', '5G and satellite on Ultra 4.', '#0b1530', '#4cc2ff', 'Ultra 4 adds satellite connectivity, so you can send messages and share your location even with no cell service.']
+  ],
+  airpods: [
+    ['Live Translation', 'Understand more languages, hands-free.', '#0b1530', '#4cc2ff', 'AirPods translate conversations in real time, so you can understand and be understood across languages.'],
+    ['Hearing Health', 'Hearing Test and Hearing Aid features.', '#0f2a1c', '#7ee08b', 'Take a clinically validated Hearing Test, then turn AirPods Pro into a hearing aid with a tap.'],
+    ['Spatial Audio', 'Sound all around you.', '#1a1033', '#c38bff', 'Personalized Spatial Audio with dynamic head tracking puts you right in the middle of the music.']
+  ],
+  'tv-home': [
+    ['Siri AI at home', 'Ask about anything happening at home.', '#1a1033', '#ff6ad5', 'Ask Siri who is at the door, whether the garage is closed, or what is playing in the kitchen, and get an answer instantly.'],
+    ['Home Collection', 'New smart home accessories, starting in December.', '#2a2010', '#ffcf5a', 'A new family of smart home accessories, from thermostats to cameras, arrives starting in December.'],
+    ['Apple TV app', 'Every show and movie, in one place.', '#0b0b0d', '#ffffff', 'Every show, movie, and live sports event, all in one app, across every Apple device and your TV.']
+  ],
+  vision: [
+    ['Entertainment', 'Your own private theater.', '#0b0b0d', '#4cc2ff', 'Watch movies on a screen that feels 100 feet wide, with Spatial Audio that surrounds you.'],
+    ['Productivity', 'An infinite canvas for your apps.', '#141414', '#d7d7db', 'Place your apps anywhere in your space and work at any scale, from a single Mac display to a wall of windows.'],
+    ['Spatial Photos', 'Relive your memories.', '#2a1410', '#ff8c5a', 'Relive your memories at life-size scale, with spatial photos and videos captured on iPhone or Apple Vision Pro.']
+  ],
+  accessories: [
+    ['MagSafe', 'Snap on and charge fast.', '#141414', '#ff8c5a', 'Snap on a case, wallet, or charger with perfectly aligned magnets, and charge at up to 25W.'],
+    ['Engraving', 'Make it personal. Free.', '#0b1530', '#4cc2ff', 'Add names, initials, emoji, or numbers to AirPods, iPad, Apple Pencil, and AirTag for free.']
+  ]
 };
-const WHY = [['Free delivery', 'And free returns within 14 days.', '&#x1F69A;'], ['Apple Trade In', 'Get credit toward a new device.', '&#x267B;'], ['Pay monthly at 0% APR', 'With Apple Card Monthly Installments.', '&#x1F4B3;'], ['Personal Setup', 'Online sessions with a Specialist.', '&#x1F4AC;'], ['Shop live with a Specialist', 'Get advice from an expert.', '&#x1F465;'], ['Engraving', 'Free on select products.', '&#x270E;']];
+/* [title, one-liner, icon, body text shown when the card expands] */
+const WHY = [
+  ['Free delivery', 'And free returns within 14 days.', '&#x1F69A;', 'Get free delivery on every order, or pick up at an Apple Store. Returns are free within 14 days of delivery.'],
+  ['Apple Trade In', 'Get credit toward a new device.', '&#x267B;', 'Trade in your eligible device and get credit toward your next purchase, or recycle it for free.'],
+  ['Pay monthly at 0% APR', 'With Apple Card Monthly Installments.', '&#x1F4B3;', 'Apple Card Monthly Installments split your purchase into interest-free payments, with 3% Daily Cash back.'],
+  ['Personal Setup', 'Online sessions with a Specialist.', '&#x1F4AC;', 'Book a free online session and a Specialist will walk you through setting up your new device.'],
+  ['Shop live with a Specialist', 'Get advice from an expert.', '&#x1F465;', 'Chat or video call with a Specialist for personalized advice before you buy.'],
+  ['Engraving', 'Free on select products.', '&#x270E;', 'Personalize AirPods, iPad, Apple Pencil, and AirTag with free engraving.']
+];
+const expandAttr = d => `data-expand="${encodeURIComponent(JSON.stringify(d))}"`;
 
 function chapterNav(cat) {
   return `<nav class="chapternav"><ul>${byCat(cat).map(p => `<li><a href="#/p/${p.id}"><span class="ic">${visual(p, 0)}</span>${p.name}${p.isNew ? '<span class="new">New</span>' : ''}</a></li>`).join('')}
@@ -112,11 +214,11 @@ function lineupCard(p) {
   </div>`;
 }
 function featureCards(list) {
-  return `<div class="scroller">${list.map(([eb, t, bg, ac]) => `<a class="card feature" href="#/info/apple-intelligence" style="background:radial-gradient(circle at 70% 85%,${ac}55,${bg} 60%)"><p class="eyebrow">${eb}</p><h3 class="h-3">${t}</h3>
-    <div class="visual"><svg viewBox="0 0 300 300"><circle cx="150" cy="170" r="${90}" fill="${ac}" opacity=".22"/><circle cx="150" cy="170" r="54" fill="${ac}" opacity=".5"/></svg></div><span class="plus">+</span></a>`).join('')}</div>`;
+  return `<div class="scroller">${list.map(([eb, t, bg, ac, body]) => { const grad = `radial-gradient(circle at 70% 85%,${ac}55,${bg} 60%)`; return `<a class="card feature" href="#/info/apple-intelligence" style="background:${grad}" ${expandAttr({ eyebrow: eb, title: t, body, bg: grad })}><p class="eyebrow">${eb}</p><h3 class="h-3">${t}</h3>
+    <div class="visual"><svg viewBox="0 0 300 300"><circle cx="150" cy="170" r="${90}" fill="${ac}" opacity=".22"/><circle cx="150" cy="170" r="54" fill="${ac}" opacity=".5"/></svg></div><span class="plus">+</span></a>`; }).join('')}</div>`;
 }
 function whyCards() {
-  return `<div class="scroller">${WHY.map(([t, d, ic]) => `<a class="card info" href="#/info/${t.toLowerCase().replace(/[^a-z]+/g, '-')}"><div class="ic">${ic}</div><p class="ptitle">${t}</p><p class="muted" style="margin-top:8px">${d}</p><span class="plus" style="background:#e8e8ed;color:#1d1d1f">+</span></a>`).join('')}</div>`;
+  return `<div class="scroller">${WHY.map(([t, d, ic, body]) => { const link = `#/info/${t.toLowerCase().replace(/[^a-z]+/g, '-')}`; return `<a class="card info" href="${link}" ${expandAttr({ title: t, body, bg: '#fff', light: true, link })}><div class="ic">${ic}</div><p class="ptitle">${t}</p><p class="muted" style="margin-top:8px">${d}</p><span class="plus" style="background:#e8e8ed;color:#1d1d1f">+</span></a>`; }).join('')}</div>`;
 }
 
 ['mac', 'ipad', 'iphone', 'watch', 'vision', 'airpods', 'tv-home', 'accessories'].forEach(cat => {
@@ -149,17 +251,17 @@ route(/^\/p\/([\w-]+)$/, id => {
   <nav class="localnav ${dark ? 'dark' : ''}"><div class="wrap"><a class="title" href="#/p/${id}">${p.name}</a>
     <div class="menu"><a href="#/p/${id}">Overview</a><a href="#specs">Tech Specs</a>${['iphone', 'mac', 'ipad', 'watch'].includes(p.category) ? `<a href="#/compare/${p.category}">Compare</a>` : ''}<a class="btn" href="#/buy/${id}">Buy</a></div></div></nav>
   <section class="p-hero ${dark ? 'dark' : ''}">
-    <div class="wrap">${p.isNew ? '<span class="badge-new">New</span>' : ''}<h1 class="h-hero">${p.name}</h1><p class="sub" style="margin-top:8px">${p.tagline}</p>
+    <div class="wrap rvg">${p.isNew ? '<span class="badge-new">New</span>' : ''}<h1 class="h-hero">${p.name}</h1><p class="sub" style="margin-top:8px">${p.tagline}</p>
     <p class="price-line">${fromPrice(p)}</p>
     <div class="ctas"><a class="btn lg" href="#/buy/${id}">Buy</a>${p.category === 'iphone' ? '<a class="btn ghost lg" href="#/trade-in">Trade in</a>' : ''}</div></div>
-    ${visual(p, Math.min(p.colors.length - 1, dark ? p.colors.length - 1 : 0))}
+    ${visual(p, Math.min(p.colors.length - 1, dark ? p.colors.length - 1 : 0), `reveal scale ${dark ? 'on-dark' : ''}`)}
     <div class="wrap" style="padding:60px 22px 90px"><h2 class="h-2 reveal" style="max-width:720px;margin:0 auto">${p.headline}</h2></div>
   </section>
   <section class="section ${dark ? 'dark' : 'gray'}"><div class="wrap"><h2 class="h-1 reveal" style="margin-bottom:50px">Get the highlights.</h2>
     <div class="highlights">${(p.highlights || []).map(h => `<div class="reveal"><div class="k">${h.k}</div><p class="v">${h.v}</p></div>`).join('')}</div>
     ${p.colors.length > 1 ? `<div style="margin-top:70px" class="reveal"><p class="h-4" style="margin-bottom:20px">Available in ${p.colors.length} finishes.</p><div class="color-row" id="pcolors">${p.colors.map((c, i) => `<button class="color-btn ${i ? '' : 'on'}" data-i="${i}" title="${c.name}" style="background:${c.hex}"></button>`).join('')}</div><p class="color-name" id="pcname">${p.colors[0].name}</p><div id="pcvis" style="max-width:520px;margin:30px auto 0">${visual(p, 0)}</div></div>` : ''}
   </div></section>
-  ${(p.features || []).map((f, i) => `<section class="feature-block ${f.dark ? 'dark' : ''}"><div class="wrap"><p class="eyebrow reveal">${f.eyebrow}</p><h2 class="h-1 reveal">${f.title}</h2><p class="body reveal">${f.text}</p>${i % 2 === 0 ? `<div class="reveal">${visual(p, (i + 1) % p.colors.length)}</div>` : ''}</div></section>`).join('')}
+  ${(p.features || []).map((f, i) => `<section class="feature-block ${f.dark ? 'dark' : ''}"><div class="wrap"><p class="eyebrow reveal">${f.eyebrow}</p><h2 class="h-1 reveal">${f.title}</h2><p class="body reveal">${f.text}</p>${i % 2 === 0 ? `<div class="reveal scale">${visual(p, (i + 1) % p.colors.length, f.dark ? 'on-dark' : '')}</div>` : ''}</div></section>`).join('')}
   <section class="section" id="specs"><div class="wrap"><h2 class="h-1" style="margin-bottom:40px">Tech Specs</h2>
     <div class="specs-table">${Object.entries(p.specs || {}).map(([k, v]) => `<div>${k}</div><div>${v}</div>`).join('')}<div>Colors</div><div>${p.colors.map(c => c.name).join(', ')}</div><div>Price</div><div>${fromPrice(p)}</div></div>
   </div></section>
@@ -168,7 +270,7 @@ route(/^\/p\/([\w-]+)$/, id => {
   $$('#pcolors .color-btn').forEach(b => b.addEventListener('click', () => {
     $$('#pcolors .color-btn').forEach(x => x.classList.remove('on')); b.classList.add('on');
     const i = +b.dataset.i; $('#pcname').textContent = p.colors[i].name;
-    $('#pcvis').innerHTML = visual(p, i); hydrateVisuals($('#pcvis'));
+    swapVisual($('#pcvis'), visual(p, i));
   }));
   return { title: p.name, dark, crumb: `${CATEGORIES[p.category].name} › ${p.name}` };
 });
@@ -212,25 +314,30 @@ route(/^\/buy\/([\w-]+)$/, id => {
       <div style="display:flex;align-items:center;gap:24px"><div style="text-align:right"><div class="total" id="btotal"></div><div class="monthly" id="bmonthly"></div></div><button class="btn lg" id="addbag" disabled>Add to Bag</button></div>
     </div></div>`;
 
+  let wasLocked = null;
   const renderOpts = () => {
     const ni = nextIdx();
+    const lockedNow = steps.map((s, i) => ni !== -1 && i > ni);
     $('#opts').innerHTML = steps.map((s, i) => {
-      const locked = ni !== -1 && i > ni;
+      const locked = lockedNow[i];
       let body = '';
       if (s.color) {
         body = `<p class="color-name" style="margin-bottom:14px">${sel.color != null ? p.colors[sel.color].name : 'Select a finish'}</p><div class="color-row">${p.colors.map((c, ci) => `<button class="color-btn ${sel.color === ci ? 'on' : ''}" data-color="${ci}" aria-label="${c.name}" title="${c.name}" style="background:linear-gradient(135deg,${shade(c.hex, .15)},${c.hex} 50%,${c.dark || shade(c.hex, -.2)})"></button>`).join('')}</div>`;
       } else if (s.tradein) {
         body = `<button class="choice ${sel.tradein === 'yes' ? 'on' : ''}" data-k="tradein" data-v="yes"><span><span class="l">Select a smartphone</span><span class="d" style="display:block">Answer a few questions to get your estimate.</span></span></button>
           <button class="choice ${sel.tradein === 'no' ? 'on' : ''}" data-k="tradein" data-v="no"><span class="l">No trade-in</span></button>
-          ${sel.tradein === 'yes' ? `<div class="tradein-box"><div class="field"><select id="tdev"><option value="">Choose your model</option>${TRADE_IN.map(t => `<option value="${t.id}" ${trade && trade.id === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}</select><label>Smartphone</label></div>
+          ${sel.tradein === 'yes' ? `<div class="tradein-box ${trade ? '' : 'slide-open'}"><div class="field"><select id="tdev"><option value="">Choose your model</option>${TRADE_IN.map(t => `<option value="${t.id}" ${trade && trade.id === t.id ? 'selected' : ''}>${t.name}</option>`).join('')}</select><label>Smartphone</label></div>
           <label class="checkbox"><input type="checkbox" id="tgood" ${!trade || trade.good ? 'checked' : ''}> It turns on and is in good condition</label>
           ${trade ? `<p><b>Estimated credit: ${money(trade.value, false)}</b></p><p class="small">Applied to your total at checkout.</p>` : ''}</div>` : ''}`;
       } else {
         body = s.choices.map(c => `<button class="choice ${sel[s.key] === c.id ? 'on' : ''}" data-k="${s.key}" data-v="${c.id}"><span><span class="l">${c.label}</span>${c.desc ? `<span class="d" style="display:block">${c.desc}</span>` : ''}</span><span class="r">${s.key === 'applecare' ? (c.price ? `${money(c.price)}<br>or ${money(c.monthly)}/mo.` : '') : c.price ? `+ ${money(c.price, false)}` : s.key === 'model' || s.key === 'storage' ? `From ${money(p.price + c.price, false)}` : ''}</span></button>`).join('');
-        if (s.engraving && sel.engrave === 'yes') body += `<div class="field engrave-input"><input id="engr" maxlength="20" placeholder=" " value="${esc(engraving)}"><label>Engraving text (up to 20 characters)</label></div>`;
+        if (s.engraving && sel.engrave === 'yes') body += `<div class="field engrave-input ${engraving ? '' : 'slide-open'}"><input id="engr" maxlength="20" placeholder=" " value="${esc(engraving)}"><label>Engraving text (up to 20 characters)</label></div>`;
       }
-      return `<div class="opt ${locked ? 'locked' : ''}"><h3>${s.label} <span>${s.sub || ''}</span></h3>${body}</div>`;
+      // A step that just unlocked slides open, like the next question appearing on apple.com.
+      const unlock = wasLocked && wasLocked[i] && !locked;
+      return `<div class="opt ${locked ? 'locked' : ''} ${unlock ? 'unlock' : ''}"><h3>${s.label} <span>${s.sub || ''}</span></h3>${body}</div>`;
     }).join('');
+    wasLocked = lockedNow;
     const { unit, ac: acc } = priceNow();
     const total = unit + (acc ? acc.price : 0) - (trade ? trade.value : 0);
     $('#btotal').textContent = money(total);
@@ -246,7 +353,7 @@ route(/^\/buy\/([\w-]+)$/, id => {
     const cb = e.target.closest('[data-color]');
     if (cb) {
       sel.color = +cb.dataset.color;
-      $('#bvis').innerHTML = visual(p, sel.color); hydrateVisuals($('#bvis'));
+      swapVisual($('#bvis'), visual(p, sel.color));
       return renderOpts();
     }
     const ch = e.target.closest('.choice');
@@ -280,13 +387,13 @@ route(/^\/buy\/([\w-]+)$/, id => {
     };
     if (modelOpt) item.name = item.model;
     Bag.add(item);
-    showAdded(item);
+    showAdded(item, $('#addbag'));
   });
   renderOpts();
   return { title: `Buy ${p.name}`, crumb: `Store › ${p.name}` };
 });
 
-function showAdded(item) {
+function showAdded(item, fromBtn) {
   const p = byId(item.id);
   const recs = byCat('accessories').filter(a => a.id !== p.id).slice(0, 3);
   modal(`<div class="center"><div style="width:180px;margin:0 auto">${visual(p, item.color)}</div>
@@ -295,7 +402,7 @@ function showAdded(item) {
     <p class="h-4" style="margin-top:34px">Complete your setup</p><div style="display:flex;gap:12px;justify-content:center;margin-top:14px">${recs.map(r => `<a href="#/buy/${r.id}" style="width:120px;font-size:12px;color:var(--text)">${visual(r, 0)}<div>${esc(r.name)}</div><div class="muted">${money(r.price)}</div></a>`).join('')}</div></div>`, (m, close) => {
     hydrateVisuals(m);
     m.addEventListener('click', e => { if (e.target.closest('[data-close]') || e.target.closest('a')) close(); });
-  });
+  }, { from: fromBtn });
 }
 
 /* ---------- Store ---------- */
@@ -333,7 +440,7 @@ const SERVICES = [
 ];
 route(/^\/entertainment$/, () => {
   const subs = store.get('subs', []);
-  main().innerHTML = `<section class="hero dark" style="min-height:420px;padding-bottom:60px"><h1 class="h-hero">Entertainment</h1><p class="sub" style="margin-top:8px">All your entertainment.<br>All in one place.</p><div class="ctas"><button class="btn lg" data-sub="Apple One">Try Apple One free</button></div></section>
+  main().innerHTML = `<section class="hero dark rvg" style="min-height:420px;padding-bottom:60px"><h1 class="h-hero">Entertainment</h1><p class="sub" style="margin-top:8px">All your entertainment.<br>All in one place.</p><div class="ctas"><button class="btn lg" data-sub="Apple One">Try Apple One free</button></div></section>
   <section class="tvplus" style="padding-top:20px"><div class="track">${SHOWS.map((s, i) => `<div class="poster">${posterArt(s, i)}<div><div class="t">${s.title}</div><div class="g">${s.genre}</div></div><button class="btn white" data-sub="Apple TV">Stream now</button></div>`).join('')}</div></section>
   <section class="section gray"><div class="wrap-wide" style="max-width:1260px"><h2 class="h-1" style="margin-bottom:30px">Explore the services.</h2>
   <div class="svc-grid">${SERVICES.map(([n, d, pr, bg]) => `<div class="svc" style="background:${bg}"><h3 class="h-3">${appleLogo('inline')} ${n.replace('Apple ', '')}</h3><p style="opacity:.9">${d}</p><p style="margin:16px 0 20px;font-weight:600">${pr ? `${money(pr)}/mo.` : 'Free'}${pr ? ' after free trial' : ''}</p>
@@ -418,7 +525,7 @@ route(/^\/stores$/, () => {
 
 /* ---------- Trade In ---------- */
 route(/^\/trade-in$/, () => {
-  main().innerHTML = `<section class="hero white" style="min-height:auto;padding-bottom:60px"><h1 class="h-hero">Apple Trade In</h1><p class="sub" style="margin-top:8px">Get credit toward your next Apple device.*</p></section>
+  main().innerHTML = `<section class="hero white rvg" style="min-height:auto;padding-bottom:60px"><h1 class="h-hero">Apple Trade In</h1><p class="sub" style="margin-top:8px">Get credit toward your next Apple device.*</p></section>
   <section class="section gray"><div class="wrap" style="max-width:680px"><h2 class="h-3" style="margin-bottom:22px">Get your estimate.</h2>
     <div class="field"><select id="tid"><option value="">Choose a device</option>${TRADE_IN.map(t => `<option value="${t.id}">${t.name}</option>`).join('')}</select><label>Device</label></div>
     <label class="checkbox"><input type="checkbox" id="tg" checked> It's in good condition and turns on</label>
@@ -473,7 +580,7 @@ const INFO = {
 route(/^\/info\/([\w-]+)$/, slug => {
   const title = INFO[slug]?.[0] || slug.split('-').map(w => w[0].toUpperCase() + w.slice(1)).join(' ');
   const text = INFO[slug]?.[1] || `Learn more about ${title} at Apple. This page is part of a fan-made recreation of apple.com built for a school project.`;
-  main().innerHTML = `<section class="hero white" style="min-height:auto;padding:90px 22px 80px"><h1 class="h-hero">${esc(title)}</h1><p class="sub-sm muted" style="max-width:680px;margin-top:20px">${esc(text)}</p><div class="ctas"><a class="btn" href="#/store">Shop the Store</a><a class="btn ghost" href="#/support">Get Support</a></div></section>`;
+  main().innerHTML = `<section class="hero white rvg" style="min-height:auto;padding:90px 22px 80px"><h1 class="h-hero">${esc(title)}</h1><p class="sub-sm muted" style="max-width:680px;margin-top:20px">${esc(text)}</p><div class="ctas"><a class="btn" href="#/store">Shop the Store</a><a class="btn ghost" href="#/support">Get Support</a></div></section>`;
   return { title, crumb: title };
 });
 

@@ -5,6 +5,10 @@
 
 const CDN = 'https://store.storeimages.cdn-apple.com/4982/as-images.apple.com/is/';
 const img = (name, w = 1000) => `${CDN}${name}?wid=${w}&hei=${w}&fmt=png-alpha&.v=1`;
+/* A URL ending in #dark is a shot on black; the renderer screen-blends it on dark sections.
+   Products whose photos Apple only serves with a baked-in background (watches, HomeView,
+   Vision Pro, Mac Studio, Studio Display) have cut-out PNGs in img/ instead. */
+const MK = 'https://www.apple.com/v/';
 
 const storage = (base, steps) => ({
   key: 'storage',
@@ -32,7 +36,7 @@ const PRODUCTS = [
     headline: 'Our biggest iPhone display. In our most pocketable design.',
     price: 1999, monthly: 83.29,
     render: 'phone-duo',
-    imgs: [img('iphone-duo-finish-select-202610-starwhite'), img('iphone-duo-finish-select-202610-nightsky')],
+    imgs: [img('iphone-duo-finish-select-star-white-202609'), img('iphone-duo-finish-select-night-sky-202609')],
     colors: [
       { name: 'Star White', hex: '#ecebe6', dark: '#cfcdc6' },
       { name: 'Night Sky', hex: '#2b3040', dark: '#151a26' }
@@ -61,7 +65,7 @@ const PRODUCTS = [
     headline: 'Variable aperture. All-day power. Pro to the core.',
     price: 1199, monthly: 49.95,
     render: 'phone-pro',
-    imgs: [img('iphone-18-pro-finish-select-202609-6-3inch-deepblack'), img('iphone-18-pro-finish-select-202609-6-3inch-silver'), img('iphone-18-pro-finish-select-202609-6-3inch-glacier'), img('iphone-18-pro-finish-select-202609-6-3inch-burgundy')],
+    imgs: [img('iphone-18-pro-finish-select-black-202609'), img('iphone-18-pro-finish-select-silver-202609'), img('iphone-18-pro-finish-select-glacier-202609'), img('iphone-18-pro-finish-select-burgundy-202609')],
     colors: [
       { name: 'Deep Black', hex: '#3a3a3c', dark: '#1d1d1f' },
       { name: 'Silver', hex: '#e3e4e5', dark: '#c4c6c8' },
@@ -96,7 +100,7 @@ const PRODUCTS = [
     headline: 'With the power of pro inside.',
     price: 1099, monthly: 45.79,
     render: 'phone-air',
-    imgs: [img('iphone-air-finish-select-202509-spaceblack'), img('iphone-air-finish-select-202509-cloudwhite'), img('iphone-air-finish-select-202509-lightgold'), img('iphone-air-finish-select-202509-skyblue')],
+    imgs: ['spaceblack', 'cloudwhite', 'lightgold', 'skyblue'].map(c => img(`iphone-air-finish-select-${c}-202509`)),
     colors: [
       { name: 'Space Black', hex: '#2f2f31', dark: '#18181a' },
       { name: 'Cloud White', hex: '#f3f2ee', dark: '#dcdad4' },
@@ -122,7 +126,7 @@ const PRODUCTS = [
     headline: 'ProMotion, Center Stage, and an even more durable design.',
     price: 899, monthly: 37.45,
     render: 'phone-17',
-    imgs: [img('iphone-17-finish-select-202509-black'), img('iphone-17-finish-select-202509-white'), img('iphone-17-finish-select-202509-mistblue'), img('iphone-17-finish-select-202509-sage'), img('iphone-17-finish-select-202509-lavender')],
+    imgs: ['black', 'white', 'mistblue', 'sage', 'lavender'].map(c => img(`iphone-17-finish-select-${c}-202509`)),
     colors: [
       { name: 'Black', hex: '#3b3b3d', dark: '#232325' },
       { name: 'White', hex: '#f5f5f0', dark: '#dfdfd9' },
@@ -149,7 +153,7 @@ const PRODUCTS = [
     headline: 'Apple Intelligence, A19, and all-day battery life.',
     price: 699, monthly: 29.12,
     render: 'phone-e',
-    imgs: [img('iphone-17e-finish-select-202602-black'), img('iphone-17e-finish-select-202602-white'), img('iphone-17e-finish-select-202602-softpink')],
+    imgs: [img('iphone-17e-finish-select-black-202603'), img('iphone-17e-finish-select-white-202603'), img('iphone-17e-finish-select-softpink-202603')],
     colors: [
       { name: 'Black', hex: '#2e2e30', dark: '#19191b' },
       { name: 'White', hex: '#f4f4f1', dark: '#dddcd7' },
@@ -173,7 +177,7 @@ const PRODUCTS = [
     headline: 'Camera Control. A18. Built for Apple Intelligence.',
     price: 799, monthly: 33.29,
     render: 'phone-16',
-    imgs: [img('iphone-16-finish-select-202409-6-1inch-ultramarine'), img('iphone-16-finish-select-202409-6-1inch-teal'), img('iphone-16-finish-select-202409-6-1inch-pink'), img('iphone-16-finish-select-202409-6-1inch-white'), img('iphone-16-finish-select-202409-6-1inch-black')],
+    imgs: ['ultramarine', 'teal', 'pink', 'white', 'black'].map(c => img(`iphone-16-${c}-select-202409`)),
     colors: [
       { name: 'Ultramarine', hex: '#8b98f0', dark: '#6170d6' },
       { name: 'Teal', hex: '#a7cfc9', dark: '#7fb0a8' },
@@ -200,7 +204,7 @@ const PRODUCTS = [
     headline: 'A real Mac. At a breakthrough price.',
     price: 699, monthly: 58.25, monthlyTerm: 12,
     render: 'laptop-neo',
-    imgs: [img('macbook-neo-citrus-select-202603'), img('macbook-neo-indigo-select-202603'), img('macbook-neo-blush-select-202603'), img('macbook-neo-silver-select-202603')],
+    imgs: [img('macbook-neo-citrus-cto-hero-202603'), img('macbook-neo-indigo-cto-hero-202603'), img('macbook-neo-blush-cto-hero-202603'), img('macbook-neo-silver-cto-hero-202603')],
     colors: [
       { name: 'Citrus', hex: '#e8e3a0', dark: '#c9c371' },
       { name: 'Indigo', hex: '#4a5683', dark: '#323c63' },
@@ -232,7 +236,7 @@ const PRODUCTS = [
     headline: 'Now supercharged by M5.',
     price: 1299, monthly: 108.25, monthlyTerm: 12,
     render: 'laptop-air',
-    imgs: [img('mba13-m5-skyblue-select-202603'), img('mba13-m5-silver-select-202603'), img('mba13-m5-starlight-select-202603'), img('mba13-m5-midnight-select-202603')],
+    imgs: [img('mba13-skyblue-select-202503'), img('mba13-silver-select-202503'), img('mba13-starlight-select-202503'), img('mba13-midnight-select-202503')],
     colors: [
       { name: 'Sky Blue', hex: '#c6d5e0', dark: '#9fb3c3' },
       { name: 'Silver', hex: '#e3e4e5', dark: '#c4c6c8' },
@@ -268,7 +272,7 @@ const PRODUCTS = [
     headline: 'M5, M5 Pro, and M5 Max. Pro performance, unleashed.',
     price: 1999, monthly: 166.58, monthlyTerm: 12,
     render: 'laptop-pro',
-    imgs: [img('mbp14-spaceblack-select-202410'), img('mbp14-silver-select-202410')],
+    imgs: [img('mbp16-spaceblack-cto-hero-202410'), img('mbp16-silver-cto-hero-202410')],
     colors: [
       { name: 'Space Black', hex: '#2e2e30', dark: '#18181a' },
       { name: 'Silver', hex: '#e3e4e5', dark: '#c4c6c8' }
@@ -304,7 +308,7 @@ const PRODUCTS = [
     headline: 'Seven bold colors. Supercharged by M4.',
     price: 1299, monthly: 108.25, monthlyTerm: 12,
     render: 'imac',
-    imgs: [img('imac-24-blue-selection-hero-202410')],
+    imgs: ['blue', 'purple', 'pink', 'orange', 'yellow', 'green', 'silver'].map(c => img(`imac-${c}-selection-hero-202410`)),
     colors: [
       { name: 'Blue', hex: '#9db8d6', dark: '#4b6f9a' },
       { name: 'Purple', hex: '#c3b5dc', dark: '#7b67a8' },
@@ -352,7 +356,7 @@ const PRODUCTS = [
     headline: 'M4 Max and M3 Ultra. The ultimate pro desktop.',
     price: 2499, monthly: 208.25, monthlyTerm: 12,
     render: 'mac-studio',
-    imgs: [img('mac-studio-select-202503')],
+    imgs: ['img/mac-studio.png'],
     colors: [{ name: 'Silver', hex: '#e3e4e5', dark: '#c4c6c8' }],
     options: [
       { key: 'model', label: 'Chip.', choices: [
@@ -372,7 +376,7 @@ const PRODUCTS = [
     headline: '27-inch 5K Retina. Center Stage camera. Studio-quality mics.',
     price: 1599, monthly: 133.25, monthlyTerm: 12,
     render: 'display',
-    imgs: [img('studio-display-gallery-1-202203')],
+    imgs: ['img/studio-display.png'],
     colors: [{ name: 'Silver', hex: '#e3e4e5', dark: '#c4c6c8' }],
     options: [
       { key: 'glass', label: 'Glass.', choices: [{ id: 'std', label: 'Standard glass', price: 0 }, { id: 'nano', label: 'Nano-texture glass', price: 300 }] },
@@ -390,7 +394,7 @@ const PRODUCTS = [
     headline: 'Impossibly thin. Supercharged by M5.',
     price: 1199, monthly: 99.91, monthlyTerm: 12,
     render: 'tablet-pro',
-    imgs: [img('ipad-pro-model-select-gallery-1-202405')],
+    imgs: [img('ipad-pro-11-select-wifi-spaceblack-202405'), img('ipad-pro-11-select-wifi-silver-202405')],
     colors: [{ name: 'Space Black', hex: '#2e2e30', dark: '#18181a' }, { name: 'Silver', hex: '#e3e4e5', dark: '#c4c6c8' }],
     options: [
       { key: 'model', label: 'Model.', choices: [{ id: '11', label: 'iPad Pro 11-inch', price: 0 }, { id: '13', label: 'iPad Pro 13-inch', price: 300 }] },
@@ -408,7 +412,7 @@ const PRODUCTS = [
     headline: 'Serious performance in a thin and light design.',
     price: 749, monthly: 62.41, monthlyTerm: 12,
     render: 'tablet-air',
-    imgs: [img('ipad-air-select-wifi-blue-202603')],
+    imgs: ['spacegray', 'blue', 'purple', 'starlight'].map(c => img(`ipad-air-select-11in-wifi-${c}-202405`)),
     colors: [
       { name: 'Space Gray', hex: '#7d7e80', dark: '#5c5d60' },
       { name: 'Blue', hex: '#a9bfd6', dark: '#7f9ab8' },
@@ -431,7 +435,7 @@ const PRODUCTS = [
     headline: 'Now with the A16 chip and double the storage.',
     price: 449, monthly: 37.41, monthlyTerm: 12,
     render: 'tablet',
-    imgs: [img('ipad-11-select-wifi-blue-202503')],
+    imgs: ['blue', 'pink', 'yellow', 'silver'].map(c => img(`ipad-2022-hero-${c}-wifi-select`)),
     colors: [
       { name: 'Blue', hex: '#a6c4e0', dark: '#7aa1c6' },
       { name: 'Pink', hex: '#f2c4cf', dark: '#dc9caf' },
@@ -477,11 +481,11 @@ const PRODUCTS = [
     headline: 'The ultimate way to watch your health.',
     price: 399, monthly: 33.25, monthlyTerm: 12,
     render: 'watch',
-    imgs: [img('watch-s12-alum-jetblack-select-202609')],
+    imgs: ['img/watch-series-12.png'],
     colors: [
+      { name: 'Dark Bronze', hex: '#7a6248', dark: '#4f3e2c' },
       { name: 'Jet Black', hex: '#1e1e20', dark: '#0e0e10' },
-      { name: 'Rose Gold', hex: '#e8c5b8', dark: '#c99f90' },
-      { name: 'Silver', hex: '#dfe0e2', dark: '#bfc1c4' },
+      { name: 'Light Gold', hex: '#e6d3b3', dark: '#c4ad87' },
       { name: 'Space Gray', hex: '#5d5e62', dark: '#3e3f42' }
     ],
     options: [
@@ -500,7 +504,7 @@ const PRODUCTS = [
     headline: 'Up to 50 hours of battery. Satellite connectivity.',
     price: 799, monthly: 66.58, monthlyTerm: 12,
     render: 'watch-ultra',
-    imgs: [img('watch-ultra4-natural-select-202609')],
+    imgs: ['img/watch-ultra-4.png'],
     colors: [{ name: 'Natural Titanium', hex: '#c9c4bc', dark: '#a39e95' }, { name: 'Black Titanium', hex: '#2b2b2d', dark: '#141416' }],
     options: [
       { key: 'band', label: 'Band.', choices: [{ id: 'trail', label: 'Trail Loop', price: 0 }, { id: 'alpine', label: 'Alpine Loop', price: 0 }, { id: 'ocean', label: 'Ocean Band', price: 0 }, { id: 'milanese', label: 'Titanium Milanese Loop', price: 200 }] },
@@ -516,8 +520,8 @@ const PRODUCTS = [
     headline: 'Always-On display and sleep tracking.',
     price: 249, monthly: 20.75, monthlyTerm: 12,
     render: 'watch-se',
-    imgs: [img('watch-se3-alum-midnight-select-202509')],
-    colors: [{ name: 'Midnight', hex: '#2e3641', dark: '#1a2029' }, { name: 'Starlight', hex: '#efe6d8', dark: '#d6c9b3' }],
+    imgs: ['img/watch-se-3.png'],
+    colors: [{ name: 'Starlight', hex: '#efe6d8', dark: '#d6c9b3' }, { name: 'Midnight', hex: '#2e3641', dark: '#1a2029' }],
     options: [
       { key: 'size', label: 'Case size.', choices: [{ id: '40', label: '40mm', price: 0 }, { id: '44', label: '44mm', price: 30 }] },
       { key: 'conn', label: 'Connectivity.', choices: [{ id: 'gps', label: 'GPS', price: 0 }, { id: 'cell', label: 'GPS + Cellular', price: 50 }] },
@@ -591,8 +595,8 @@ const PRODUCTS = [
     headline: 'A new way to enjoy entertainment and manage the home.',
     price: 299, monthly: 24.91, monthlyTerm: 12,
     render: 'homeview',
-    imgs: [img('homeview-select-202610')],
-    colors: [{ name: 'White', hex: '#f5f5f7', dark: '#dcdcdf' }, { name: 'Midnight', hex: '#2e3641', dark: '#1a2029' }],
+    imgs: ['img/homeview-silver.png', 'img/homeview-space-gray.png', 'img/homeview-starlight.png', 'img/homeview-pink.png'],
+    colors: [{ name: 'Silver', hex: '#d9dadc', dark: '#b4b6b9' }, { name: 'Space Gray', hex: '#6e6e73', dark: '#4a4a4e' }, { name: 'Starlight', hex: '#efe6d8', dark: '#d6c9b3' }, { name: 'Pink', hex: '#f1c8c6', dark: '#d9a5a3' }],
     options: [applecare(1.99, 39, 'AppleCare+ for HomeView')],
     highlights: [{ k: '7"', v: 'Display with a built-in speaker base.' }, { k: 'Siri AI', v: 'Ask about anything in your home.' }],
     features: [{ eyebrow: 'Home', title: 'Control center for your home.', text: 'See cameras, adjust lights, FaceTime family, and play music, all from a 7-inch display.' }],
@@ -604,13 +608,13 @@ const PRODUCTS = [
     headline: 'Four-speaker surround sound and Sound Glow.',
     price: 149, monthly: 12.41, monthlyTerm: 12,
     render: 'homepod-mini',
-    imgs: [img('homepod-mini-2-select-202610')],
+    imgs: ['white', 'midnight', 'blue', 'green', 'pink'].map(c => img(`homepod-mini-select-${c}-202610`)),
     colors: [
       { name: 'White', hex: '#f1f1f1', dark: '#d9d9d9' },
       { name: 'Midnight', hex: '#3a3d45', dark: '#232529' },
       { name: 'Blue', hex: '#3d6fa6', dark: '#2a5280' },
-      { name: 'Yellow', hex: '#f3d35b', dark: '#d6b337' },
-      { name: 'Orange', hex: '#f08a4b', dark: '#cf6a2d' }
+      { name: 'Green', hex: '#6f8f5a', dark: '#4f6b3f' },
+      { name: 'Pink', hex: '#e9a8b4', dark: '#c98592' }
     ],
     options: [applecare(0.99, 15, 'AppleCare+ for HomePod mini')],
     highlights: [{ k: '$149', v: 'Room-filling sound.' }],
@@ -623,7 +627,7 @@ const PRODUCTS = [
     headline: 'High-fidelity audio with room sensing.',
     price: 299, monthly: 24.91, monthlyTerm: 12,
     render: 'homepod',
-    imgs: [img('homepod-select-202301-white')],
+    imgs: [img('homepod-select-white-202610'), img('homepod-select-midnight-202610')],
     colors: [{ name: 'White', hex: '#f1f1f1', dark: '#d9d9d9' }, { name: 'Midnight', hex: '#3a3d45', dark: '#232529' }],
     options: [applecare(1.99, 39, 'AppleCare+ for HomePod')],
     highlights: [{ k: 'Spatial', v: 'Immersive Spatial Audio.' }],
@@ -651,7 +655,8 @@ const PRODUCTS = [
     headline: 'Now with M5 and the Dual Knit Band.',
     price: 3499, monthly: 291.58, monthlyTerm: 12,
     render: 'vision',
-    imgs: [img('vision-pro-select-202510')],
+    imgs: ['img/vision-pro.png'],
+    imgsDark: [MK + 'apple-vision-pro/l/images/overview/technology/displays/hero_base__bpxhq09r962u_large.jpg#dark'],
     colors: [{ name: 'Silver', hex: '#d9dadc', dark: '#b4b6b9' }],
     options: [
       storage(3499, [['256GB', 0], ['512GB', 200], ['1TB', 400]]),
