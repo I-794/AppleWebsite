@@ -21,15 +21,22 @@ function toast(msg) {
   t._h = setTimeout(() => t.classList.remove('show'), 2600);
 }
 
-function modal(html, onMount) {
+/* opts.from: an element the sheet should appear to grow out of (e.g. the button that opened it). */
+function modal(html, onMount, opts = {}) {
   const bg = document.createElement('div');
   bg.className = 'modal-bg';
   bg.innerHTML = `<div class="modal" role="dialog" aria-modal="true"><button class="x" aria-label="Close">&#x2715;</button>${html}</div>`;
-  const close = () => { bg.remove(); document.body.classList.remove('no-scroll'); };
+  const close = () => { bg.classList.add('closing'); setTimeout(() => bg.remove(), 180); document.body.classList.remove('no-scroll'); };
   bg.addEventListener('click', e => { if (e.target === bg || e.target.closest('.x')) close(); });
   document.body.appendChild(bg);
   document.body.classList.add('no-scroll');
-  onMount && onMount(bg.querySelector('.modal'), close);
+  const m = bg.querySelector('.modal');
+  if (opts.from && opts.from.getBoundingClientRect) {
+    const b = opts.from.getBoundingClientRect();
+    m.style.transformOrigin = `${b.left + b.width / 2 - m.offsetLeft}px ${b.top + b.height / 2 - m.offsetTop}px`;
+    m.classList.add('grow');
+  }
+  onMount && onMount(m, close);
   return close;
 }
 
@@ -60,9 +67,16 @@ const Bag = {
     return { sub, trade, disc, ship, tax, total: taxable + ship + (tax || 0), promo: pr };
   }
 };
+let _lastCount = null;
 function updateBadge() {
   const n = Bag.count();
-  $$('.gn-bag').forEach(b => { b.querySelector('.badge')?.remove(); if (n) b.insertAdjacentHTML('beforeend', `<span class="badge">${n}</span>`); });
+  const grew = _lastCount != null && n > _lastCount;
+  _lastCount = n;
+  $$('.gn-bag').forEach(b => {
+    b.querySelector('.badge')?.remove();
+    if (n) b.insertAdjacentHTML('beforeend', `<span class="badge ${grew ? 'pop' : ''}">${n}</span>`);
+    if (grew) { b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }
+  });
 }
 
 /* ===== Global nav ===== */
@@ -274,7 +288,7 @@ function navigate() {
   const hash = decodeURIComponent(location.hash.replace(/^#/, '')) || '/';
   window.closeNav && window.closeNav();
   document.body.classList.remove('no-scroll');
-  $$('.modal-bg, .apple-pay-sheet').forEach(m => m.remove());
+  $$('.modal-bg, .apple-pay-sheet, .xcard-bg').forEach(m => m.remove());
   const main = $('#main');
   main.onclick = null;
   main.onchange = null;
@@ -299,10 +313,12 @@ function navigate() {
   main.focus({ preventScroll: true });
 }
 
+/* .reveal: a single element fades up when scrolled into view.
+   .rvg: a group (hero, tile) whose children rise in one after another. */
 function observeReveal(root) {
-  const els = $$('.reveal', root);
+  const els = $$('.reveal, .rvg', root);
   if (!('IntersectionObserver' in window)) return els.forEach(e => e.classList.add('in'));
-  const io = new IntersectionObserver(entries => entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: .12 });
+  const io = new IntersectionObserver(entries => entries.forEach(en => { if (en.isIntersecting) { en.target.classList.add('in'); io.unobserve(en.target); } }), { threshold: .1 });
   els.forEach(e => io.observe(e));
 }
 
@@ -312,4 +328,4 @@ document.addEventListener('DOMContentLoaded', () => {
   renderFooter();
   navigate();
 });
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { window.closeNav && window.closeNav(); $$('.modal-bg').forEach(m => m.remove()); document.body.classList.remove('no-scroll'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { window.closeNav && window.closeNav(); $$('.modal-bg').forEach(m => m.remove()); $$('.xcard-bg').forEach(m => m._close ? m._close() : m.remove()); document.body.classList.remove('no-scroll'); } });

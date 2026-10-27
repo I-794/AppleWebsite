@@ -22,4 +22,4 @@ then visit http://localhost:8000.
 
 Only test cards are accepted, e.g. `4242 4242 4242 4242`, any future date, any 3-digit code.
 
-Product photos are hotlinked from Apple's image CDN when available; otherwise the site draws its own vector renders of each product in every finish.
+Product photos are hotlinked from Apple's image CDN when available (a few watch and Vision Pro shots live in `img/` with their backgrounds removed); otherwise the site draws its own vector renders of each product in every finish.

@@ -365,15 +365,18 @@ function renderProduct(p, colorIdx = 0) {
 /* A product visual: draws the vector render immediately, then swaps in the
    real Apple CDN photo for that finish if it loads. */
 const _imgOk = new Map();
+/* `cls` may include "on-dark" to pick a photo shot on black (p.imgsDark) when the
+   product sits on a dark background. */
 function visual(p, colorIdx = 0, cls = '') {
-  const src = p.imgs && p.imgs[colorIdx];
+  const onDark = /\bon-dark\b/.test(cls);
+  const src = (onDark && p.imgsDark && p.imgsDark[colorIdx]) || (p.imgs && p.imgs[colorIdx]);
   return `<div class="visual ${cls}" ${src ? `data-src="${src}"` : ''}>${renderProduct(p, colorIdx)}</div>`;
 }
 function hydrateVisuals(root = document) {
   root.querySelectorAll('.visual[data-src]').forEach(el => {
     const src = el.dataset.src;
     el.removeAttribute('data-src');
-    const swap = () => { el.innerHTML = `<img src="${src}" alt="" loading="lazy" referrerpolicy="no-referrer">`; el.classList.add('photo'); };
+    const swap = () => { el.innerHTML = `<img src="${src}" alt="" loading="lazy" referrerpolicy="no-referrer">`; el.classList.add('photo'); if (src.endsWith('#dark')) el.classList.add('flat-dark'); };
     if (_imgOk.get(src) === true) return swap();
     if (_imgOk.get(src) === false) return;
     const im = new Image();
